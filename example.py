@@ -81,7 +81,7 @@ class CMCallback(tf.keras.callbacks.Callback):
         # Calculate the confusion matrix.
         cm = sklearn.metrics.confusion_matrix(self.test_labels, test_pred)
         # Log the confusion matrix as an image summary.
-        figure = plot_confusion_matrix(cm, class_names=[str(i) for i in range(1,11)])
+        figure   = plot_confusion_matrix(cm, class_names=[str(i) for i in range(1, 11)])
         cm_image = plot_to_image(figure)
 
         # Log the confusion matrix as an image summary.
@@ -189,6 +189,10 @@ def fit_model(log_dir, n_randomize=5, epochs=10, num_classes=10):
     print(x_train.shape[0], "train samples")
     print(x_test.shape[0], "test samples")
 
+    # save class labels to disk to color data points in TensorBoard accordingly
+    with open(os.path.join(log_dir, "metadata.tsv"), "w") as f:
+        np.savetxt(f, np.abs(y_test))
+
     # convert class vectors to binary class matrices
     y_train = tf.keras.utils.to_categorical(y_train, num_classes)
     y_test = tf.keras.utils.to_categorical(y_test, num_classes)
@@ -223,7 +227,11 @@ def fit_model(log_dir, n_randomize=5, epochs=10, num_classes=10):
 
         # Tensorboard callback
         tf_board = tf.keras.callbacks.TensorBoard(
-            log_dir=run_dir, histogram_freq=1, write_graph=True, update_freq="epoch"
+            log_dir=run_dir,
+            histogram_freq=1,
+            write_graph=True,
+            update_freq="epoch",
+            embeddings_freq=1,
         )
 
         model = get_model(
@@ -235,7 +243,7 @@ def fit_model(log_dir, n_randomize=5, epochs=10, num_classes=10):
         )
 
         # Confusion matrix callback
-        file_writer_cm = tf.summary.create_file_writer(run_dir + '/cm')
+        file_writer_cm = tf.summary.create_file_writer(run_dir + "/cm")
         tf_cm_callback = CMCallback(file_writer_cm, model, x_test, y_test)
 
         model.compile(
